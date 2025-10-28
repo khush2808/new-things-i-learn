@@ -101,7 +101,7 @@ const TimeSeriesChart = observer(() => {
           </span>
         )}
       </div>
-      {stockStore.isLoading && !stockStore.hasData ? (
+      {stockStore.isLoading ? (
         <div style={{ textAlign: "center", padding: "40px" }}>
           Loading chart data...
         </div>
