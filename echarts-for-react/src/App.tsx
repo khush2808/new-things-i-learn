@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import BarChartPage from "./pages/BarChartPage";
 import LineChartPage from "./pages/LineChartPage";
 import TimeSeriesPage from "./pages/TimeSeriesPage";
+import OptionsChartPage from "./pages/OptionsChartPage";
 
 /**
  * App Component - Route Configuration
@@ -20,6 +21,7 @@ function App() {
         <Route path="bar-chart" element={<BarChartPage />} />
         <Route path="line-chart" element={<LineChartPage />} />
         <Route path="time-series" element={<TimeSeriesPage />} />
+        <Route path="options-chart" element={<OptionsChartPage />} />
       </Route>
     </Routes>
   );
