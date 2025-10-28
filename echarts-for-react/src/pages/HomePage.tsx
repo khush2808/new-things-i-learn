@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import Echarts from "../components/EChartsExample";
 import LineChart from "../components/LineChart";
 import TimeSeriesChart from "../components/TimeSeriesChart";
+import OptionsChart from "../components/OptionsChart";
 
 /**
  * HomePage Component
@@ -61,6 +62,22 @@ export default function HomePage() {
             </Link>
           </div>
           <TimeSeriesChart />
+        </div>
+
+        {/* Options Time Series Chart Container */}
+        <div className="bg-purple-200 p-6 rounded-lg lg:col-span-2 relative group hover:shadow-xl transition-shadow">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">
+              Options Time Series Chart
+            </h2>
+            <Link
+              to="/options-chart"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium text-sm"
+            >
+              View Full Page →
+            </Link>
+          </div>
+          <OptionsChart />
         </div>
       </div>
     </div>
