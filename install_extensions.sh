@@ -79,7 +79,7 @@ echo "Starting VSCode extension installation..."
 # Install each extension
 for extension in "${extensions[@]}"; do
     echo "Installing $extension..."
-    code --install-extension "$extension"
+    windsurf --install-extension "$extension"
     
     # Add a small delay between installations
     sleep 1
