@@ -42,7 +42,6 @@ export default function TimeSeriesChart() {
           ["2024-04-01", 158],
           ["2024-04-15", 175],
         ],
-        smooth: true,
         lineStyle: {
           color: "#5470c6",
         },
@@ -60,7 +59,6 @@ export default function TimeSeriesChart() {
           ["2024-04-01", 102],
           ["2024-04-15", 108],
         ],
-        smooth: true,
         lineStyle: {
           color: "#91cc75",
         },
@@ -78,7 +76,7 @@ export default function TimeSeriesChart() {
           ["2024-04-01", 85],
           ["2024-04-15", 88],
         ],
-        smooth: true,
+
         lineStyle: {
           color: "#fac858",
         },
