@@ -8,7 +8,7 @@ export interface StockData {
 /**
  * Simulates an API call that returns stock price data
  * In a real scenario, this would be an actual API endpoint
- * 
+ *
  * @returns Promise resolving to array of stock data points
  */
 export async function fetchStockDataFromAPI(): Promise<StockData[]> {
