@@ -1,7 +1,7 @@
 import "./App.css";
-import Echarts from "./components/EChartsExample";
-import LineChart from "./components/LineChart";
-import TimeSeriesChart from "./components/TimeSeriesChart";
+import Echarts from "./components/EChartsExample.js";
+import LineChart from "./components/LineChart.js";
+import TimeSeriesChart from "./components/TimeSeriesChart.js";
 
 function App() {
   return (
