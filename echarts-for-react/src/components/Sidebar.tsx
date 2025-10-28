@@ -17,6 +17,7 @@ const navLinks: NavLink[] = [
   { path: "/bar-chart", label: "Bar Chart", icon: "📊" },
   { path: "/line-chart", label: "Line Chart", icon: "📈" },
   { path: "/time-series", label: "Time Series", icon: "📉" },
+  { path: "/options-chart", label: "Options Chart", icon: "💹" },
 ];
 
 /**
