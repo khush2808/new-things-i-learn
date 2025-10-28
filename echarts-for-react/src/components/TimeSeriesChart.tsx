@@ -1,6 +1,26 @@
+import { useEffect } from "react";
+import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
+import { stockStore } from "../stores/StockStore.js";
 
-export default function TimeSeriesChart() {
+/**
+ * TimeSeriesChart Component
+ *
+ * This component is wrapped with observer() from mobx-react-lite
+ * which makes it reactive to MobX store changes.
+ *
+ * The component only handles UI/rendering logic while business logic
+ * is delegated to the MobX store.
+ */
+const TimeSeriesChart = observer(() => {
+  // Load data on component mount
+  useEffect(() => {
+    if (!stockStore.hasData) {
+      stockStore.fetchData();
+    }
+  }, []);
+
+  // Build chart option from store data
   const option = {
     title: {
       text: "Stock Prices Over Time",
@@ -32,16 +52,7 @@ export default function TimeSeriesChart() {
       {
         name: "Tech Corp",
         type: "line",
-        data: [
-          ["2024-01-01", 120],
-          ["2024-01-15", 132],
-          ["2024-02-01", 145],
-          ["2024-02-15", 138],
-          ["2024-03-01", 155],
-          ["2024-03-15", 162],
-          ["2024-04-01", 158],
-          ["2024-04-15", 175],
-        ],
+        data: stockStore.data.map((d) => [d.date, d.techCorp]),
         lineStyle: {
           color: "#5470c6",
         },
@@ -49,16 +60,7 @@ export default function TimeSeriesChart() {
       {
         name: "Finance Inc",
         type: "line",
-        data: [
-          ["2024-01-01", 85],
-          ["2024-01-15", 88],
-          ["2024-02-01", 92],
-          ["2024-02-15", 87],
-          ["2024-03-01", 95],
-          ["2024-03-15", 98],
-          ["2024-04-01", 102],
-          ["2024-04-15", 108],
-        ],
+        data: stockStore.data.map((d) => [d.date, d.financeInc]),
         lineStyle: {
           color: "#91cc75",
         },
@@ -66,17 +68,7 @@ export default function TimeSeriesChart() {
       {
         name: "Health Ltd",
         type: "line",
-        data: [
-          ["2024-01-01", 65],
-          ["2024-01-15", 68],
-          ["2024-02-01", 72],
-          ["2024-02-15", 75],
-          ["2024-03-01", 78],
-          ["2024-03-15", 82],
-          ["2024-04-01", 85],
-          ["2024-04-15", 88],
-        ],
-
+        data: stockStore.data.map((d) => [d.date, d.healthLtd]),
         lineStyle: {
           color: "#fac858",
         },
@@ -84,5 +76,42 @@ export default function TimeSeriesChart() {
     ],
   };
 
-  return <ReactECharts option={option} style={{ height: "400px" }} />;
-}
+  return (
+    <div>
+      <div style={{ marginBottom: "16px" }}>
+        <button
+          onClick={() => stockStore.fetchData()}
+          disabled={stockStore.isLoading}
+          style={{
+            padding: "8px 16px",
+            fontSize: "14px",
+            backgroundColor: "#5470c6",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: stockStore.isLoading ? "not-allowed" : "pointer",
+            opacity: stockStore.isLoading ? 0.6 : 1,
+          }}
+        >
+          {stockStore.isLoading ? "Loading..." : "Refetch Data"}
+        </button>
+        {stockStore.error && (
+          <span style={{ marginLeft: "16px", color: "red" }}>
+            Error: {stockStore.error}
+          </span>
+        )}
+      </div>
+      {stockStore.isLoading ? (
+        <div style={{ textAlign: "center", padding: "40px" }}>
+          Loading chart data...
+        </div>
+      ) : (
+        <ReactECharts option={option} style={{ height: "400px" }} />
+      )}
+    </div>
+  );
+});
+
+TimeSeriesChart.displayName = "TimeSeriesChart";
+
+export default TimeSeriesChart;
