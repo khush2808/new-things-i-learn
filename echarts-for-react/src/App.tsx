@@ -1,34 +1,27 @@
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
-import Echarts from "./components/EChartsExample";
-import LineChart from "./components/LineChart";
-import TimeSeriesChart from "./components/TimeSeriesChart";
+import RootLayout from "./layouts/RootLayout";
+import HomePage from "./pages/HomePage";
+import BarChartPage from "./pages/BarChartPage";
+import LineChartPage from "./pages/LineChartPage";
+import TimeSeriesPage from "./pages/TimeSeriesPage";
 
+/**
+ * App Component - Route Configuration
+ *
+ * Defines all application routes with the RootLayout wrapper
+ * that includes the collapsible sidebar navigation.
+ */
 function App() {
   return (
-    <>
-      <div className="w-full min-h-screen flex flex-col items-center gap-6 p-6">
-        <div className="">
-          <h1 className="text-6xl font-bold p-6 bg-amber-600 m-6">You are a legend if you are reading this.</h1>
-        </div>
-        
-        <div className="w-5/6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-pink-200 p-6 rounded-lg">
-            <h2 className="text-2xl font-semibold mb-4">Bar Chart</h2>
-            <Echarts />
-          </div>
-          
-          <div className="bg-blue-200 p-6 rounded-lg">
-            <h2 className="text-2xl font-semibold mb-4">Line Chart</h2>
-            <LineChart />
-          </div>
-          
-          <div className="bg-green-200 p-6 rounded-lg lg:col-span-2">
-            <h2 className="text-2xl font-semibold mb-4">Time Series Multi-line Chart</h2>
-            <TimeSeriesChart />
-          </div>
-        </div>
-      </div>
-    </>
+    <Routes>
+      <Route path="/" element={<RootLayout />}>
+        <Route index element={<HomePage />} />
+        <Route path="bar-chart" element={<BarChartPage />} />
+        <Route path="line-chart" element={<LineChartPage />} />
+        <Route path="time-series" element={<TimeSeriesPage />} />
+      </Route>
+    </Routes>
   );
 }
 
