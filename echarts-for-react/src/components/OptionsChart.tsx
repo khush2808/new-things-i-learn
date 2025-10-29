@@ -30,7 +30,7 @@ const OptionsChart = observer(() => {
       left: "center",
     },
     tooltip: {
-      trigger: "axis",
+      trigger: "item",
       axisPointer: {
         type: "cross",
         crossStyle: {
