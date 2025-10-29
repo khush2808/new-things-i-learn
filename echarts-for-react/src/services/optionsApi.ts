@@ -1,6 +1,6 @@
 /**
  * Options Data API Service
- * 
+ *
  * This service handles fetching options contract data from the JSON file.
  * The data includes underlying price, implied volatilities, greeks, and other metrics.
  */
@@ -28,10 +28,14 @@ export interface OptionsData {
   dte: number;
 }
 
+// Import JSON data at build time (bundled by Vite)
+import sampleData from "../../json-data/sample.json";
+
 /**
  * Fetches options data from the sample JSON file
  * Simulates API call with network delay for realistic loading experience
- * 
+ * Uses build-time import for better performance
+ *
  * @returns Promise resolving to array of options data points
  */
 export async function fetchOptionsDataFromAPI(): Promise<OptionsData[]> {
@@ -40,20 +44,11 @@ export async function fetchOptionsDataFromAPI(): Promise<OptionsData[]> {
     const delay = Math.random() * 1000 + 500;
     await new Promise((resolve) => setTimeout(resolve, delay));
 
-    // Fetch data from the JSON file
-    const response = await fetch('/json-data/sample.json');
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // The JSON has a "results" property containing the array
-    return data.results as OptionsData[];
+    // Data is already bundled at build time
+    console.log("length", sampleData.results.length);
+    return sampleData.results as OptionsData[];
   } catch (error) {
-    console.error('Error fetching options data:', error);
-    throw new Error('Failed to fetch options data');
+    console.error("Error fetching options data:", error);
+    throw new Error("Failed to fetch options data");
   }
 }
-
