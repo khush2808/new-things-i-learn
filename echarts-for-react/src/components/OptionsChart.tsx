@@ -3,6 +3,40 @@ import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
 import { optionsStore } from "../stores/OptionsStore";
 
+// Spinner component
+const Spinner = ({ size = 16 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{
+      animation: "spin 0.6s linear infinite",
+      display: "inline-block",
+      verticalAlign: "middle",
+    }}
+  >
+    <style>
+      {`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}
+    </style>
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      strokeWidth="3"
+      fill="none"
+      strokeDasharray="31.4 31.4"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 /**
  * OptionsChart Component
  *
@@ -30,7 +64,7 @@ const OptionsChart = observer(() => {
       left: "center",
     },
     tooltip: {
-      trigger: "item",
+      trigger: "axis",
       axisPointer: {
         type: "cross",
         crossStyle: {
@@ -91,7 +125,7 @@ const OptionsChart = observer(() => {
         },
         splitLine: {
           lineStyle: {
-            type: "dashed",
+            type: "solid",
           },
         },
       },
@@ -178,7 +212,14 @@ const OptionsChart = observer(() => {
             opacity: optionsStore.isLoading ? 0.6 : 1,
           }}
         >
-          {optionsStore.isLoading ? "Loading..." : "Refetch Data"}
+          {optionsStore.isLoading ? (
+            <>
+              <Spinner size={16} />{" "}
+              <span style={{ marginLeft: "8px" }}>Loading...</span>
+            </>
+          ) : (
+            "Refetch Data"
+          )}
         </button>
         {optionsStore.error && (
           <span style={{ marginLeft: "16px", color: "red" }}>
@@ -187,8 +228,16 @@ const OptionsChart = observer(() => {
         )}
       </div>
       {optionsStore.isLoading && !optionsStore.hasData ? (
-        <div style={{ textAlign: "center", padding: "40px" }}>
-          Loading chart data...
+        <div
+          style={{
+            textAlign: "center",
+            padding: "80px",
+            fontSize: "18px",
+            color: "#666",
+          }}
+        >
+          <Spinner size={40} />
+          <div style={{ marginTop: "16px" }}>Loading chart data...</div>
         </div>
       ) : (
         <ReactECharts option={option} style={{ height: "400px" }} />
