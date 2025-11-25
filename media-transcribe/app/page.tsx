@@ -6,9 +6,6 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [inputSource, setInputSource] = useState<"mic" | "tab">("mic");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackPosition, setPlaybackPosition] = useState(0);
-  const [playbackDuration, setPlaybackDuration] = useState(0);
   const [stats, setStats] = useState({
     totalSize: "0 MB",
     recordingTime: "0s",
@@ -20,58 +17,6 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
   const chunkLogRef = useRef<HTMLDivElement>(null);
-  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
-
-  const formatTime = (seconds: number) => {
-    if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  const getAudioPlayer = () => {
-    if (audioPlayerRef.current) {
-      return audioPlayerRef.current;
-    }
-
-    const player = new Audio();
-    player.preload = "auto";
-
-    player.addEventListener("play", () => setIsPlaying(true));
-    player.addEventListener("pause", () => setIsPlaying(false));
-    player.addEventListener("timeupdate", () =>
-      setPlaybackPosition(player.currentTime)
-    );
-    player.addEventListener("loadedmetadata", () =>
-      setPlaybackDuration(
-        Number.isFinite(player.duration) ? player.duration : 0
-      )
-    );
-    player.addEventListener("ended", () => {
-      setIsPlaying(false);
-      setPlaybackPosition(0);
-      player.currentTime = 0;
-    });
-
-    audioPlayerRef.current = player;
-    return player;
-  };
-
-  const resetPlayback = (options?: { clearSource?: boolean }) => {
-    const player = audioPlayerRef.current;
-    if (!player) return;
-
-    player.pause();
-    player.currentTime = 0;
-    if (options?.clearSource) {
-      player.removeAttribute("src");
-    }
-
-    setIsPlaying(false);
-    setPlaybackPosition(0);
-  };
 
   const requestAudioStream = async () => {
     if (inputSource === "tab") {
@@ -127,7 +72,6 @@ export default function Home() {
           type: "audio/webm",
         });
         const url = URL.createObjectURL(audioBlob);
-        resetPlayback({ clearSource: true });
         setAudioUrl(url);
 
         const recordingDuration = Date.now() - recordingStartTimeRef.current;
@@ -161,32 +105,6 @@ export default function Home() {
         .getTracks()
         .forEach((track) => track.stop());
     }
-  };
-
-  const togglePlayback = async () => {
-    if (!audioUrl) return;
-
-    const player = getAudioPlayer();
-    if (player.src !== audioUrl) {
-      player.src = audioUrl;
-      player.currentTime = 0;
-      setPlaybackPosition(0);
-    }
-
-    if (player.paused) {
-      try {
-        await player.play();
-      } catch (error) {
-        console.error("Unable to start playback", error);
-      }
-    } else {
-      player.pause();
-    }
-  };
-
-  const stopPlayback = () => {
-    if (!audioPlayerRef.current) return;
-    resetPlayback();
   };
 
   useEffect(() => {
@@ -258,20 +176,6 @@ export default function Home() {
           >
             Stop Recording
           </button>
-          <button
-            onClick={togglePlayback}
-            disabled={!audioUrl}
-            className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
-          >
-            {isPlaying ? "⏸ Pause Playback" : "▶ Play Recording"}
-          </button>
-          <button
-            onClick={stopPlayback}
-            disabled={!audioUrl}
-            className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
-          >
-            ⏹ Stop Playback
-          </button>
         </div>
 
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg text-sm text-gray-700 mb-7">
@@ -319,17 +223,20 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-4 bg-white border border-gray-300 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-800">Playback</span>
-                <span className="text-sm font-mono text-blue-600">
-                  {formatTime(playbackPosition)} /{" "}
-                  {formatTime(playbackDuration)}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Audio plays locally in this tab. Use the buttons above to
-                control playback without starting a new recording.
+            <div className="mt-4 bg-white border border-gray-300 rounded-lg p-4 space-y-3">
+              <span className="font-bold text-gray-800 block">
+                Playback Preview
+              </span>
+              <audio
+                controls
+                src={audioUrl || undefined}
+                className="w-full"
+              >
+                Your browser does not support the audio element.
+              </audio>
+              <p className="text-xs text-gray-500">
+                Use the built-in browser controls to play, pause, or download
+                the recording.
               </p>
             </div>
           </div>
