@@ -134,7 +134,7 @@ const OptionsChart = observer(() => {
         name: "IV (%)",
         position: "right",
         min: 0,
-        max: 0.5,
+        max: 0.1,
         axisLabel: {
           formatter: (value: number) => (value * 100).toFixed(1) + "%",
         },
