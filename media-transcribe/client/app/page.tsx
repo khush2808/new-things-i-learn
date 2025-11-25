@@ -199,7 +199,7 @@ export default function Home() {
               <button
                 key={source}
                 onClick={() => setInputSource(source)}
-                className={`py-2 px-3 rounded-xl text-sm font-semibold border transition-all ${
+                className={`py-2 px-3 rounded-xl text-sm font-semibold border transition-all cursor-pointer ${
                   inputSource === source
                     ? "bg-blue-500 text-white border-blue-500 shadow-lg"
                     : "bg-white text-gray-700 border-gray-300 hover:border-blue-400"
@@ -226,14 +226,14 @@ export default function Home() {
           <button
             onClick={startRecording}
             disabled={isRecording}
-            className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
+            className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed cursor-pointer"
           >
             Start Recording
           </button>
           <button
             onClick={stopRecording}
             disabled={!isRecording}
-            className="bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
+            className="bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed cursor-pointer"
           >
             Stop Recording
           </button>
