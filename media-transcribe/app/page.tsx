@@ -22,12 +22,16 @@ export default function Home() {
     if (inputSource === "tab") {
       try {
         const tabStream = await navigator.mediaDevices.getDisplayMedia({
-          video: false,
+          video: true,
           audio: true,
         });
-        const hasAudio = tabStream.getAudioTracks().length > 0;
+        const audioTracks = tabStream.getAudioTracks();
+        const videoTracks = tabStream.getVideoTracks();
+
+        const hasAudio = audioTracks.length > 0;
 
         if (hasAudio) {
+          videoTracks.forEach((track) => track.stop()); // drop video immediately
           return tabStream;
         }
 
