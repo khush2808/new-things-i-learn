@@ -6,6 +6,10 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [inputSource, setInputSource] = useState<"mic" | "tab">("mic");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const [sourceWarning, setSourceWarning] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalSize: "0 MB",
     recordingTime: "0s",
@@ -17,34 +21,124 @@ export default function Home() {
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingStartTimeRef = useRef<number>(0);
   const chunkLogRef = useRef<HTMLDivElement>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const cleanupStreamsRef = useRef<(() => void) | null>(null);
+
+  const formatTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return "00:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const getAudioPlayer = () => {
+    if (audioPlayerRef.current) {
+      return audioPlayerRef.current;
+    }
+
+    const player = new Audio();
+    player.preload = "auto";
+
+    player.addEventListener("play", () => setIsPlaying(true));
+    player.addEventListener("pause", () => setIsPlaying(false));
+    player.addEventListener("timeupdate", () =>
+      setPlaybackPosition(player.currentTime)
+    );
+    player.addEventListener("loadedmetadata", () =>
+      setPlaybackDuration(
+        Number.isFinite(player.duration) ? player.duration : 0
+      )
+    );
+    player.addEventListener("ended", () => {
+      setIsPlaying(false);
+      setPlaybackPosition(0);
+      player.currentTime = 0;
+    });
+
+    audioPlayerRef.current = player;
+    return player;
+  };
+
+  const resetPlayback = (options?: { clearSource?: boolean }) => {
+    const player = audioPlayerRef.current;
+    if (!player) return;
+
+    player.pause();
+    player.currentTime = 0;
+    if (options?.clearSource) {
+      player.removeAttribute("src");
+    }
+
+    setIsPlaying(false);
+    setPlaybackPosition(0);
+  };
 
   const requestAudioStream = async () => {
+    cleanupStreamsRef.current?.();
+    setSourceWarning(null);
+
+    let tabStream: MediaStream | null = null;
+
     if (inputSource === "tab") {
       try {
-        const tabStream = await navigator.mediaDevices.getDisplayMedia({
+        tabStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true,
         });
-        const audioTracks = tabStream.getAudioTracks();
-        const videoTracks = tabStream.getVideoTracks();
-
-        const hasAudio = audioTracks.length > 0;
-
-        if (hasAudio) {
-          videoTracks.forEach((track) => track.stop()); // drop video immediately
-          return tabStream;
-        }
-
-        tabStream.getTracks().forEach((track) => track.stop());
-        console.warn(
-          "Tab capture returned no audio tracks; falling back to mic."
-        );
       } catch (error) {
         console.warn("Tab audio capture failed; falling back to mic.", error);
+        tabStream = null;
       }
     }
 
-    return navigator.mediaDevices.getUserMedia({ audio: true });
+    const micStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+    });
+    const cleanupFns: Array<() => void> = [
+      () => micStream.getTracks().forEach((track) => track.stop()),
+    ];
+
+    if (tabStream) {
+      const audioTracks = tabStream.getAudioTracks();
+      const videoTracks = tabStream.getVideoTracks();
+
+      if (audioTracks.length > 0) {
+        const audioContext = new AudioContext();
+        const destination = audioContext.createMediaStreamDestination();
+        cleanupFns.push(() => audioContext.close());
+        cleanupFns.push(() =>
+          tabStream?.getTracks().forEach((track) => track.stop())
+        );
+
+        const connectStream = (stream: MediaStream) => {
+          const source = audioContext.createMediaStreamSource(stream);
+          source.connect(destination);
+        };
+
+        connectStream(micStream);
+        connectStream(new MediaStream(audioTracks));
+        videoTracks.forEach((track) => track.stop());
+
+        cleanupStreamsRef.current = () => cleanupFns.forEach((fn) => fn());
+        return destination.stream;
+      }
+
+      tabStream.getTracks().forEach((track) => track.stop());
+      console.warn(
+        "Tab capture returned no audio tracks; falling back to mic."
+      );
+    }
+
+    if (inputSource === "tab") {
+      setSourceWarning(
+        "Tab audio unavailable; recording microphone input instead."
+      );
+    }
+
+    cleanupStreamsRef.current = () => cleanupFns.forEach((fn) => fn());
+    return micStream;
   };
 
   const startRecording = async () => {
@@ -68,10 +162,16 @@ export default function Home() {
       };
 
       mediaRecorder.onstop = () => {
+        if (cleanupStreamsRef.current) {
+          cleanupStreamsRef.current();
+          cleanupStreamsRef.current = null;
+        }
+
         const audioBlob = new Blob(audioChunksRef.current, {
           type: "audio/webm",
         });
         const url = URL.createObjectURL(audioBlob);
+        resetPlayback({ clearSource: true });
         setAudioUrl(url);
 
         const recordingDuration = Date.now() - recordingStartTimeRef.current;
@@ -105,6 +205,37 @@ export default function Home() {
         .getTracks()
         .forEach((track) => track.stop());
     }
+
+    if (cleanupStreamsRef.current) {
+      cleanupStreamsRef.current();
+      cleanupStreamsRef.current = null;
+    }
+  };
+
+  const togglePlayback = async () => {
+    if (!audioUrl) return;
+
+    const player = getAudioPlayer();
+    if (player.src !== audioUrl) {
+      player.src = audioUrl;
+      player.currentTime = 0;
+      setPlaybackPosition(0);
+    }
+
+    if (player.paused) {
+      try {
+        await player.play();
+      } catch (error) {
+        console.error("Unable to start playback", error);
+      }
+    } else {
+      player.pause();
+    }
+  };
+
+  const stopPlayback = () => {
+    if (!audioPlayerRef.current) return;
+    resetPlayback();
   };
 
   useEffect(() => {
@@ -112,6 +243,13 @@ export default function Home() {
       chunkLogRef.current.scrollTop = chunkLogRef.current.scrollHeight;
     }
   }, [stats.chunks]);
+
+  useEffect(() => {
+    return () => {
+      cleanupStreamsRef.current?.();
+      cleanupStreamsRef.current = null;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-500 to-purple-600 flex justify-center items-center p-5">
@@ -159,6 +297,11 @@ export default function Home() {
             display capture. If it fails, the recorder falls back to the mic
             automatically.
           </p>
+          {sourceWarning && (
+            <p className="text-xs text-red-500 mt-2 font-semibold">
+              {sourceWarning}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-7">
@@ -175,6 +318,20 @@ export default function Home() {
             className="bg-red-500 hover:bg-red-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
           >
             Stop Recording
+          </button>
+          <button
+            onClick={togglePlayback}
+            disabled={!audioUrl}
+            className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
+          >
+            {isPlaying ? "⏸ Pause Playback" : "▶ Play Recording"}
+          </button>
+          <button
+            onClick={stopPlayback}
+            disabled={!audioUrl}
+            className="bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 text-white font-bold py-3 px-5 rounded-xl transition-all hover:shadow-lg disabled:cursor-not-allowed"
+          >
+            ⏹ Stop Playback
           </button>
         </div>
 
@@ -223,20 +380,17 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-4 bg-white border border-gray-300 rounded-lg p-4 space-y-3">
-              <span className="font-bold text-gray-800 block">
-                Playback Preview
-              </span>
-              <audio
-                controls
-                src={audioUrl || undefined}
-                className="w-full"
-              >
-                Your browser does not support the audio element.
-              </audio>
-              <p className="text-xs text-gray-500">
-                Use the built-in browser controls to play, pause, or download
-                the recording.
+            <div className="mt-4 bg-white border border-gray-300 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-gray-800">Playback</span>
+                <span className="text-sm font-mono text-blue-600">
+                  {formatTime(playbackPosition)} /{" "}
+                  {formatTime(playbackDuration)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Audio plays locally in this tab. Use the buttons above to
+                control playback without starting a new recording.
               </p>
             </div>
           </div>
